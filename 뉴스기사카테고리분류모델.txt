@@ -1,0 +1,273 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyOi0GGPaachnX6uVS5T7a9S",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/oaho/Apartner/blob/main/%EB%89%B4%EC%8A%A4%EA%B8%B0%EC%82%AC%EC%B9%B4%ED%85%8C%EA%B3%A0%EB%A6%AC%EB%B6%84%EB%A5%98%EB%AA%A8%EB%8D%B8\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 1,
+      "metadata": {
+        "id": "I4DQLiv4FmMp"
+      },
+      "outputs": [],
+      "source": [
+        "from tensorflow.keras.models import Sequential\n",
+        "from tensorflow.keras.layers import Dense, LSTM, Embedding\n",
+        "from tensorflow.keras.utils import to_categorical\n",
+        "from tensorflow.keras.preprocessing import sequence\n",
+        "from tensorflow.keras.datasets import reuters\n",
+        "from tensorflow.keras.callbacks import EarlyStopping"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import numpy as np\n",
+        "import matplotlib.pyplot as plt\n",
+        "\n",
+        "# 데이터를 불러와 학습셋, 테스트셋으로 나눕니다.\n",
+        "(X_train, y_train), (X_test, y_test) = reuters.load_data(num_words=1000, test_split=0.2)"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "z2biNTSdFqJT",
+        "outputId": "5f3ef358-3157-4b48-c229-432b313193c0"
+      },
+      "execution_count": 2,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Downloading data from https://storage.googleapis.com/tensorflow/tf-keras-datasets/reuters.npz\n",
+            "2110848/2110848 [==============================] - 0s 0us/step\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# 데이터를 확인해 보겠습니다.\n",
+        "category = np.max(y_train) + 1\n",
+        "print(category, '카테고리')\n",
+        "print(len(X_train), '학습용 뉴스 기사')\n",
+        "print(len(X_test), '테스트용 뉴스 기사')\n",
+        "print(X_train[0])"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "qkp39kUjFtub",
+        "outputId": "63bd71ef-1d04-4f4b-87db-768928e8f2e1"
+      },
+      "execution_count": 3,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "46 카테고리\n",
+            "8982 학습용 뉴스 기사\n",
+            "2246 테스트용 뉴스 기사\n",
+            "[1, 2, 2, 8, 43, 10, 447, 5, 25, 207, 270, 5, 2, 111, 16, 369, 186, 90, 67, 7, 89, 5, 19, 102, 6, 19, 124, 15, 90, 67, 84, 22, 482, 26, 7, 48, 4, 49, 8, 864, 39, 209, 154, 6, 151, 6, 83, 11, 15, 22, 155, 11, 15, 7, 48, 9, 2, 2, 504, 6, 258, 6, 272, 11, 15, 22, 134, 44, 11, 15, 16, 8, 197, 2, 90, 67, 52, 29, 209, 30, 32, 132, 6, 109, 15, 17, 12]\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "y_train"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "qVsIcXgNLQYA",
+        "outputId": "f9d0b8a1-eecb-46c2-e89a-d2121b25a78f"
+      },
+      "execution_count": 10,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "array([[0., 0., 0., ..., 0., 0., 0.],\n",
+              "       [0., 0., 0., ..., 0., 0., 0.],\n",
+              "       [0., 0., 0., ..., 0., 0., 0.],\n",
+              "       ...,\n",
+              "       [0., 0., 0., ..., 0., 0., 0.],\n",
+              "       [0., 0., 0., ..., 0., 0., 0.],\n",
+              "       [0., 0., 0., ..., 0., 0., 0.]], dtype=float32)"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 10
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "X_train"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "MfsGeVSoFwTq",
+        "outputId": "6236cf2a-e7f0-46ae-bb6d-d616f673b731"
+      },
+      "execution_count": 5,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "array([list([1, 2, 2, 8, 43, 10, 447, 5, 25, 207, 270, 5, 2, 111, 16, 369, 186, 90, 67, 7, 89, 5, 19, 102, 6, 19, 124, 15, 90, 67, 84, 22, 482, 26, 7, 48, 4, 49, 8, 864, 39, 209, 154, 6, 151, 6, 83, 11, 15, 22, 155, 11, 15, 7, 48, 9, 2, 2, 504, 6, 258, 6, 272, 11, 15, 22, 134, 44, 11, 15, 16, 8, 197, 2, 90, 67, 52, 29, 209, 30, 32, 132, 6, 109, 15, 17, 12]),\n",
+              "       list([1, 2, 699, 2, 2, 56, 2, 2, 9, 56, 2, 2, 81, 5, 2, 57, 366, 737, 132, 20, 2, 7, 2, 49, 2, 2, 2, 2, 699, 2, 8, 7, 10, 241, 16, 855, 129, 231, 783, 5, 4, 587, 2, 2, 2, 775, 7, 48, 34, 191, 44, 35, 2, 505, 17, 12]),\n",
+              "       list([1, 53, 12, 284, 15, 14, 272, 26, 53, 959, 32, 818, 15, 14, 272, 26, 39, 684, 70, 11, 14, 12, 2, 18, 180, 183, 187, 70, 11, 14, 102, 32, 11, 29, 53, 44, 704, 15, 14, 19, 758, 15, 53, 959, 47, 2, 15, 14, 19, 132, 15, 39, 965, 32, 11, 14, 147, 72, 11, 180, 183, 187, 44, 11, 14, 102, 19, 11, 123, 186, 90, 67, 960, 4, 78, 13, 68, 467, 511, 110, 59, 89, 90, 67, 2, 55, 2, 92, 617, 80, 2, 46, 905, 220, 13, 4, 346, 48, 235, 629, 5, 211, 5, 2, 7, 2, 81, 5, 187, 11, 15, 9, 2, 201, 5, 47, 2, 18, 478, 2, 5, 2, 7, 232, 2, 71, 5, 160, 63, 11, 9, 2, 81, 5, 102, 59, 11, 17, 12]),\n",
+              "       ...,\n",
+              "       list([1, 141, 2, 387, 81, 8, 16, 2, 10, 340, 2, 850, 31, 56, 2, 691, 9, 2, 71, 9, 2, 2, 2, 699, 2, 2, 2, 699, 244, 2, 4, 49, 8, 4, 656, 850, 33, 2, 9, 2, 340, 2, 2, 9, 2, 22, 2, 2, 687, 83, 35, 15, 257, 6, 57, 2, 7, 4, 2, 654, 5, 2, 2, 2, 4, 49, 8, 16, 369, 646, 6, 2, 7, 124, 407, 17, 12]),\n",
+              "       list([1, 53, 46, 957, 26, 14, 74, 132, 26, 39, 46, 258, 2, 18, 14, 74, 134, 2, 18, 88, 2, 72, 11, 14, 2, 32, 11, 123, 383, 89, 39, 46, 235, 10, 864, 728, 5, 258, 44, 11, 15, 22, 753, 9, 42, 92, 131, 728, 5, 69, 312, 11, 15, 22, 222, 2, 2, 383, 48, 39, 74, 235, 10, 864, 276, 5, 61, 32, 11, 15, 21, 4, 211, 5, 126, 2, 42, 92, 131, 46, 19, 352, 11, 15, 22, 710, 220, 9, 42, 92, 131, 276, 5, 59, 61, 11, 15, 22, 10, 455, 7, 2, 137, 336, 2, 6, 2, 142, 971, 2, 43, 359, 5, 4, 326, 753, 364, 17, 12]),\n",
+              "       list([1, 227, 2, 91, 2, 125, 2, 21, 4, 2, 76, 7, 4, 757, 481, 2, 790, 2, 2, 9, 111, 149, 8, 7, 10, 76, 223, 51, 4, 417, 8, 2, 91, 2, 2, 340, 7, 194, 2, 6, 2, 21, 127, 2, 2, 2, 6, 2, 4, 329, 433, 7, 65, 87, 2, 10, 2, 2, 290, 9, 21, 567, 16, 2, 24, 4, 76, 209, 30, 2, 2, 2, 8, 4, 60, 8, 4, 966, 308, 40, 2, 129, 2, 295, 277, 2, 9, 24, 286, 2, 234, 222, 9, 4, 906, 2, 2, 114, 2, 2, 7, 4, 113, 17, 12])],\n",
+              "      dtype=object)"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 5
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# 단어의 수를 맞추어 줍니다.\n",
+        "X_train = sequence.pad_sequences(X_train, maxlen=100)\n",
+        "X_test = sequence.pad_sequences(X_test, maxlen=100)"
+      ],
+      "metadata": {
+        "id": "vaDLQEzXFzh0"
+      },
+      "execution_count": 6,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# 원-핫 인코딩 처리를 합니다.\n",
+        "y_train = to_categorical(y_train)\n",
+        "y_test = to_categorical(y_test)"
+      ],
+      "metadata": {
+        "id": "Pqsa15WSF9zj"
+      },
+      "execution_count": 7,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# 모델의 구조를 설정합니다.\n",
+        "model = Sequential()\n",
+        "model.add(Embedding(1000, 100))\n",
+        "model.add(LSTM(100, activation='tanh'))\n",
+        "model.add(Dense(46, activation='softmax'))\n",
+        "# 모델의 실행 옵션을 정합니다.\n",
+        "model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])\n",
+        "\n",
+        "# 학습의 조기 중단을 설정합니다.\n",
+        "early_stopping_callback = EarlyStopping(monitor='val_loss', patience=5)\n",
+        "\n",
+        "# 모델을 실행합니다.\n",
+        "history = model.fit(X_train, y_train, batch_size=20, epochs=200, validation_data=(X_test, y_test), callbacks=[early_stopping_callback])"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "KTUBALotGCKs",
+        "outputId": "37abd7c8-1983-47b1-f892-a90f03de38b4"
+      },
+      "execution_count": 9,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Epoch 1/200\n",
+            "450/450 [==============================] - 53s 110ms/step - loss: 2.2584 - accuracy: 0.4287 - val_loss: 1.8085 - val_accuracy: 0.5494\n",
+            "Epoch 2/200\n",
+            "450/450 [==============================] - 49s 109ms/step - loss: 1.7491 - accuracy: 0.5536 - val_loss: 1.7042 - val_accuracy: 0.5588\n",
+            "Epoch 3/200\n",
+            "450/450 [==============================] - 47s 104ms/step - loss: 1.6119 - accuracy: 0.5795 - val_loss: 1.6241 - val_accuracy: 0.5908\n",
+            "Epoch 4/200\n",
+            "450/450 [==============================] - 46s 102ms/step - loss: 1.4725 - accuracy: 0.6183 - val_loss: 1.5249 - val_accuracy: 0.6193\n",
+            "Epoch 5/200\n",
+            "450/450 [==============================] - 47s 104ms/step - loss: 1.2856 - accuracy: 0.6766 - val_loss: 1.3473 - val_accuracy: 0.6683\n",
+            "Epoch 6/200\n",
+            "450/450 [==============================] - 47s 104ms/step - loss: 1.1334 - accuracy: 0.7135 - val_loss: 1.2437 - val_accuracy: 0.6803\n",
+            "Epoch 7/200\n",
+            "450/450 [==============================] - 47s 105ms/step - loss: 1.0351 - accuracy: 0.7350 - val_loss: 1.1671 - val_accuracy: 0.7008\n",
+            "Epoch 8/200\n",
+            "450/450 [==============================] - 47s 104ms/step - loss: 0.9528 - accuracy: 0.7595 - val_loss: 1.1522 - val_accuracy: 0.7110\n",
+            "Epoch 9/200\n",
+            "450/450 [==============================] - 50s 111ms/step - loss: 0.8712 - accuracy: 0.7823 - val_loss: 1.1609 - val_accuracy: 0.7164\n",
+            "Epoch 10/200\n",
+            "450/450 [==============================] - 49s 108ms/step - loss: 0.8080 - accuracy: 0.8000 - val_loss: 1.1488 - val_accuracy: 0.7182\n",
+            "Epoch 11/200\n",
+            "450/450 [==============================] - 47s 105ms/step - loss: 0.7431 - accuracy: 0.8125 - val_loss: 1.1898 - val_accuracy: 0.7084\n",
+            "Epoch 12/200\n",
+            "450/450 [==============================] - 46s 102ms/step - loss: 0.6927 - accuracy: 0.8263 - val_loss: 1.1306 - val_accuracy: 0.7293\n",
+            "Epoch 13/200\n",
+            "450/450 [==============================] - 47s 105ms/step - loss: 0.6371 - accuracy: 0.8388 - val_loss: 1.1544 - val_accuracy: 0.7275\n",
+            "Epoch 14/200\n",
+            "450/450 [==============================] - 48s 106ms/step - loss: 0.5865 - accuracy: 0.8504 - val_loss: 1.2513 - val_accuracy: 0.7235\n",
+            "Epoch 15/200\n",
+            "450/450 [==============================] - 47s 105ms/step - loss: 0.5348 - accuracy: 0.8638 - val_loss: 1.2335 - val_accuracy: 0.7271\n",
+            "Epoch 16/200\n",
+            "450/450 [==============================] - 48s 106ms/step - loss: 0.4782 - accuracy: 0.8779 - val_loss: 1.2698 - val_accuracy: 0.7257\n",
+            "Epoch 17/200\n",
+            "450/450 [==============================] - 48s 107ms/step - loss: 0.4400 - accuracy: 0.8879 - val_loss: 1.2917 - val_accuracy: 0.7275\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [],
+      "metadata": {
+        "id": "upZ4YojaGEwM"
+      },
+      "execution_count": null,
+      "outputs": []
+    }
+  ]
+}
